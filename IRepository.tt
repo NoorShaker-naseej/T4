@@ -1,0 +1,90 @@
+﻿<#@ template hostSpecific="true"#>
+<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ assembly name="System.IO" #>
+<#@ assembly name="System.Data" #>
+<#@ assembly name="System.Configuration" #>
+<#@ assembly name="Microsoft.SqlServer.ConnectionInfo" #>
+<#@ assembly name="Microsoft.SqlServer.Smo" #>
+<#@ assembly name="Microsoft.SqlServer.Management.Sdk.Sfc" #>
+<#@ assembly name="EnvDTE" #>
+<#@ import namespace="EnvDTE" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Data" #>
+<#@ import namespace="System.Data.SqlClient" #>
+<#@ import namespace="System.Configuration" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="Microsoft.SqlServer.Management.Smo" #>
+<#@ import namespace="Microsoft.SqlServer.Management.Common" #>
+<#@ import namespace="System.Data.Common" #>
+<#@ output extension="./" #>
+<#@include file="Manager.ttinclude"#>
+
+
+<#
+var connectionString = @"data source=10.0.6.96;initial catalog=Shomoos.Registration;user id=sa;password=P@ssw0rd;";
+ SqlConnection sqlConnection = new SqlConnection(connectionString);
+ ServerConnection serverConnection = new ServerConnection(sqlConnection);
+ sqlConnection.Open();
+ Server server = new Server(serverConnection);
+var tables = server.Databases[server.ConnectionContext.DatabaseName].Tables;
+//var manager = TemplateFileManager.Create(this);
+var manager = Manager.Create(Host, GenerationEnvironment);
+	
+	
+
+
+
+#>
+<#
+foreach(Table table in tables)
+{
+	if(table.Name!="sysdiagrams"){	
+    manager.StartNewFile("I"+table.Name+"Repository.cs");
+var hostServiceProvider = (IServiceProvider)Host;
+var dte = (EnvDTE.DTE)hostServiceProvider.GetService(typeof(EnvDTE.DTE));
+var activeSolutionProjects = (Array)dte.ActiveSolutionProjects;
+var dteProject = (EnvDTE.Project)activeSolutionProjects.GetValue(0);
+string defaultNamespace = dteProject.Properties.Item("DefaultNamespace").Value.ToString();
+string [] rootNameSpace=defaultNamespace.Split('.');
+
+
+#>
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Shomoos.GenericRepository;
+using <#=rootNameSpace[0]#>.DAL;
+using <#=rootNameSpace[0]#>.DataContract;
+
+namespace <#=defaultNamespace#>
+{
+    public interface I<#=table.Name#>Repository:IRepository<<#=table.Name#>>
+    {
+	IEnumerable<<#=table.Name#>DC> GetAll();
+	<#=table.Name#>DC GetById(long Id);
+	IEnumerable<<#=table.Name#>DC> GetAllWithPager(int size);
+
+    }
+}
+<#}
+}
+manager.Process(true);
+#>
+
+<#+
+
+//public string GetSolutionDirectory()
+//{
+   // var serviceProvider = this.Host as IServiceProvider;
+   // var dte = serviceProvider.GetService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
+   // return System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+//}
+#>
